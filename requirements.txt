@@ -1,21 +1,17 @@
-pyautogui
-pillow
-tkcap
-pydicom
-img2pdf
-opencv_python
-matplotlib
-pandas
+pyautogui==0.9.54
+pillow==10.1.0
+tkcap==0.0.3
+pydicom==2.4.4
+img2pdf==0.5.1
+matplotlib==3.9.1
+pandas==2.2.2
 tensorflow==2.15.0
-python-xlib
+python-xlib==0.33
 #######
-tk
-easy-pil
-PyAutoGUI
-python-xlib 
-tkcap
-img2pdf
-numpy
+tk==0.1.0
+easy-pil==0.3.3
+# PyAutoGUI==0.9.54
+numpy==1.26.4
 keras==2.15.0
 # torch==2.1.0
-opencv-python
+opencv-python==4.10.0.84
