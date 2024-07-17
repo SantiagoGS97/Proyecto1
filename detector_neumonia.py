@@ -44,7 +44,6 @@ def predict(array):
     heatmap = grad_cam(array)
     return (label, proba, heatmap)
 
-
 def grad_cam(array):
     img = preprocess(array)
     model = model_fun()
@@ -72,9 +71,6 @@ def grad_cam(array):
     superimposed_img = cv2.add(transparency, img2)
     superimposed_img = superimposed_img.astype(np.uint8)
     return superimposed_img[:, :, ::-1]
-
-
-
 
 def read_dicom_file(self):
     img = dicom.read_file(self)
