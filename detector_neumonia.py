@@ -6,16 +6,43 @@ from tkinter import ttk, font, filedialog, Entry
 from tkinter.messagebox import askokcancel, showinfo, WARNING
 import getpass
 from PIL import ImageTk, Image
+from tensorflow.keras import backend as K
 import csv
 import pyautogui
 import tkcap
 import img2pdf
 import numpy as np
 import time
+import pydicom as dicom
+from abc import ABC, abstractmethod
+
 import tensorflow as tf
 tf.compat.v1.disable_eager_execution()
 tf.compat.v1.experimental.output_all_intermediates(True)
 import cv2
+
+def model_fun():
+    model = tf.keras.models.load_model('./models/conv_MLP_84.h5')
+    return model
+
+def predict(array):
+    #   1. call function to pre-process image: it returns image in batch format
+    batch_array_img = preprocess(array)
+    #   2. call function to load model and predict: it returns predicted class and probability
+    model = model_fun()
+    # model_cnn = tf.keras.models.load_model('conv_MLP_84.h5')
+    prediction = np.argmax(model.predict(batch_array_img))
+    proba = np.max(model.predict(batch_array_img)) * 100
+    label = ""
+    if prediction == 0:
+        label = "bacteriana"
+    if prediction == 1:
+        label = "normal"
+    if prediction == 2:
+        label = "viral"
+    #   3. call function to generate Grad-CAM: it returns an image with a superimposed heatmap
+    heatmap = grad_cam(array)
+    return (label, proba, heatmap)
 
 
 def grad_cam(array):
@@ -47,28 +74,10 @@ def grad_cam(array):
     return superimposed_img[:, :, ::-1]
 
 
-def predict(array):
-    #   1. call function to pre-process image: it returns image in batch format
-    batch_array_img = preprocess(array)
-    #   2. call function to load model and predict: it returns predicted class and probability
-    model = model_fun()
-    # model_cnn = tf.keras.models.load_model('conv_MLP_84.h5')
-    prediction = np.argmax(model.predict(batch_array_img))
-    proba = np.max(model.predict(batch_array_img)) * 100
-    label = ""
-    if prediction == 0:
-        label = "bacteriana"
-    if prediction == 1:
-        label = "normal"
-    if prediction == 2:
-        label = "viral"
-    #   3. call function to generate Grad-CAM: it returns an image with a superimposed heatmap
-    heatmap = grad_cam(array)
-    return (label, proba, heatmap)
 
 
-def read_dicom_file(path):
-    img = dicom.read_file(path)
+def read_dicom_file(self):
+    img = dicom.read_file(self)
     img_array = img.pixel_array
     img2show = Image.fromarray(img_array)
     img2 = img_array.astype(float)
@@ -76,10 +85,9 @@ def read_dicom_file(path):
     img2 = np.uint8(img2)
     img_RGB = cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB)
     return img_RGB, img2show
-
-
-def read_jpg_file(path):
-    img = cv2.imread(path)
+    
+def read_jpg_file(self):
+    img = cv2.imread(self)
     img_array = np.asarray(img)
     img2show = Image.fromarray(img_array)
     img2 = img_array.astype(float)
@@ -99,7 +107,7 @@ def preprocess(array):
     return array
 
 
-class App:
+class App():
     def __init__(self):
         self.root = Tk()
         self.root.title("Herramienta para la detección rápida de neumonía")
@@ -115,12 +123,8 @@ class App:
         self.lab2 = ttk.Label(self.root, text="Imagen con Heatmap", font=fonti)
         self.lab3 = ttk.Label(self.root, text="Resultado:", font=fonti)
         self.lab4 = ttk.Label(self.root, text="Cédula Paciente:", font=fonti)
-        self.lab5 = ttk.Label(
-            self.root,
-            text="SOFTWARE PARA EL APOYO AL DIAGNÓSTICO MÉDICO DE NEUMONÍA",
-            font=fonti,
-        )
-        self.lab6 = ttk.Label(self.root, text="Probabilidad:", font=fonti)
+        self.lab5 = ttk.Label(self.root,text="SOFTWARE PARA EL APOYO AL DIAGNÓSTICO MÉDICO DE NEUMONÍA",font=fonti)
+        # self.lab6 = ttk.Label(self.root, text="Probabilidad:", font=fonti)
 
         #   TWO STRING VARIABLES TO CONTAIN ID AND RESULT
         self.ID = StringVar()
@@ -135,21 +139,16 @@ class App:
         #   TWO IMAGE INPUT BOXES
         self.text_img1 = Text(self.root, width=31, height=15)
         self.text_img2 = Text(self.root, width=31, height=15)
+        self.separator = ttk.Separator(self.root, orient=HORIZONTAL)
         self.text2 = Text(self.root)
         self.text3 = Text(self.root)
 
         #   BUTTONS
-        self.button1 = ttk.Button(
-            self.root, text="Predecir", state="disabled", command=self.run_model
-        )
-        self.button2 = ttk.Button(
-            self.root, text="Cargar Imagen", command=self.load_img_file
-        )
+        self.button1 = ttk.Button(self.root, text="Predecir", command=self.run_model)
+        self.button2 = ttk.Button(self.root, text="Cargar Imagen", command=self.load_img_file)
         self.button3 = ttk.Button(self.root, text="Borrar", command=self.delete)
         self.button4 = ttk.Button(self.root, text="PDF", command=self.create_pdf)
-        self.button6 = ttk.Button(
-            self.root, text="Guardar", command=self.save_results_csv
-        )
+        self.button6 = ttk.Button(self.root, text="Guardar", command=self.save_results_csv)
 
         #   WIDGETS POSITIONS
         self.lab1.place(x=110, y=65)
@@ -157,7 +156,7 @@ class App:
         self.lab3.place(x=500, y=350)
         self.lab4.place(x=65, y=350)
         self.lab5.place(x=122, y=25)
-        self.lab6.place(x=500, y=400)
+        # self.lab6.place(x=500, y=400)
         self.button1.place(x=220, y=460)
         self.button2.place(x=70, y=460)
         self.button3.place(x=670, y=460)
@@ -184,18 +183,15 @@ class App:
     #   METHODS
     def load_img_file(self):
         filepath = filedialog.askopenfilename(
-            initialdir="/",
+            initialdir="./",
             title="Select image",
-            filetypes=(
-                ("DICOM", "*.dcm"),
-                ("JPEG", "*.jpeg"),
-                ("jpg files", "*.jpg"),
-                ("png files", "*.png"),
-            ),
-        )
+            filetypes=(("DICOM", "*.dcm"),("JPEG", "*.jpeg"),("jpg files", "*.jpg"),("png files", "*.png")))
         if filepath:
-            self.array, img2show = read_dicom_file(filepath)
-            self.img1 = img2show.resize((250, 250), Image.ANTIALIAS)
+            if filepath[filepath.find("."):] == ".dcm":
+                self.array, img2show = read_dicom_file(filepath)
+            else:
+                self.array, img2show = read_jpg_file(filepath)
+            self.img1 = img2show.resize((250, 250), Image.Resampling.LANCZOS)
             self.img1 = ImageTk.PhotoImage(self.img1)
             self.text_img1.image_create(END, image=self.img1)
             self.button1["state"] = "enabled"
@@ -203,7 +199,7 @@ class App:
     def run_model(self):
         self.label, self.proba, self.heatmap = predict(self.array)
         self.img2 = Image.fromarray(self.heatmap)
-        self.img2 = self.img2.resize((250, 250), Image.ANTIALIAS)
+        self.img2 = self.img2.resize((250, 250), Image.Resampling.LANCZOS)
         self.img2 = ImageTk.PhotoImage(self.img2)
         print("OK")
         self.text_img2.image_create(END, image=self.img2)
@@ -213,9 +209,7 @@ class App:
     def save_results_csv(self):
         with open("historial.csv", "a") as csvfile:
             w = csv.writer(csvfile, delimiter="-")
-            w.writerow(
-                [self.text1.get(), self.label, "{:.2f}".format(self.proba) + "%"]
-            )
+            w.writerow([self.text1.get(), self.label, "{:.2f}".format(self.proba) + "%"])
             showinfo(title="Guardar", message="Los datos se guardaron con éxito.")
 
     def create_pdf(self):
@@ -230,9 +224,7 @@ class App:
         showinfo(title="PDF", message="El PDF fue generado con éxito.")
 
     def delete(self):
-        answer = askokcancel(
-            title="Confirmación", message="Se borrarán todos los datos.", icon=WARNING
-        )
+        answer = askokcancel(title="Confirmación", message="Se borrarán todos los datos.", icon=WARNING)
         if answer:
             self.text1.delete(0, "end")
             self.text2.delete(1.0, "end")

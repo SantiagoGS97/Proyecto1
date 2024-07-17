@@ -6,7 +6,7 @@ img2pdf
 opencv_python
 matplotlib
 pandas
-tensorflow
+tensorflow==2.16.1
 python-xlib
 #######
 tk
@@ -16,5 +16,6 @@ python-xlib
 tkcap
 img2pdf
 numpy
-tensorflow
+keras==3.0
+# torch==2.1.0
 opencv-python
