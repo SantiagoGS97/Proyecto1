@@ -26,11 +26,8 @@ def model_fun():
     return model
 
 def predict(array):
-    #   1. call function to pre-process image: it returns image in batch format
     batch_array_img = preprocess(array)
-    #   2. call function to load model and predict: it returns predicted class and probability
     model = model_fun()
-    # model_cnn = tf.keras.models.load_model('conv_MLP_84.h5')
     prediction = np.argmax(model.predict(batch_array_img))
     proba = np.max(model.predict(batch_array_img)) * 100
     label = ""
@@ -40,7 +37,6 @@ def predict(array):
         label = "normal"
     if prediction == 2:
         label = "viral"
-    #   3. call function to generate Grad-CAM: it returns an image with a superimposed heatmap
     heatmap = grad_cam(array)
     return (label, proba, heatmap)
 
@@ -57,7 +53,6 @@ def grad_cam(array):
     pooled_grads_value, conv_layer_output_value = iterate(img)
     for filters in range(64):
         conv_layer_output_value[:, :, filters] *= pooled_grads_value[filters]
-    # creating the heatmap
     heatmap = np.mean(conv_layer_output_value, axis=-1)
     heatmap = np.maximum(heatmap, 0)  # ReLU
     heatmap /= np.max(heatmap)  # normalize
@@ -72,24 +67,36 @@ def grad_cam(array):
     superimposed_img = superimposed_img.astype(np.uint8)
     return superimposed_img[:, :, ::-1]
 
-def read_dicom_file(self):
-    img = dicom.read_file(self)
-    img_array = img.pixel_array
-    img2show = Image.fromarray(img_array)
-    img2 = img_array.astype(float)
-    img2 = (np.maximum(img2, 0) / img2.max()) * 255.0
-    img2 = np.uint8(img2)
-    img_RGB = cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB)
-    return img_RGB, img2show
+class ImageReader:
+    def __init__(self,filepath):
+        self.filepath = filepath
+        
+    def read_dicom_file(self):
+        img = dicom.read_file(self.filepath)
+        img_array = img.pixel_array
+        img2show = Image.fromarray(img_array)
+        img2 = img_array.astype(float)
+        img2 = (np.maximum(img2, 0) / img2.max()) * 255.0
+        img2 = np.uint8(img2)
+        img_RGB = cv2.cvtColor(img2, cv2.COLOR_GRAY2RGB)
+        return img_RGB, img2show
     
-def read_jpg_file(self):
-    img = cv2.imread(self)
-    img_array = np.asarray(img)
-    img2show = Image.fromarray(img_array)
-    img2 = img_array.astype(float)
-    img2 = (np.maximum(img2, 0) / img2.max()) * 255.0
-    img2 = np.uint8(img2)
-    return img2, img2show
+    def read_jpg_file(self):
+        img = cv2.imread(self.filepath)
+        img_array = np.asarray(img)
+        img2show = Image.fromarray(img_array)
+        img2 = img_array.astype(float)
+        img2 = (np.maximum(img2, 0) / img2.max()) * 255.0
+        img2 = np.uint8(img2)
+        return img2, img2show
+
+    def process_image(self):
+        if self.filepath.lower().endswith('.dcm'):
+            return self.read_dicom_file()
+        elif self.filepath.lower().endswith(('.jpg', '.jpeg', '.png')):
+            return self.read_jpg_file()
+        else:
+            raise ValueError("Unsupported file format")
 
 
 def preprocess(array):
@@ -110,7 +117,6 @@ class App():
 
         #   BOLD FONT
         fonti = font.Font(weight="bold")
-
         self.root.geometry("815x560")
         self.root.resizable(0, 0)
 
@@ -182,15 +188,12 @@ class App():
             initialdir="./",
             title="Select image",
             filetypes=(("DICOM", "*.dcm"),("JPEG", "*.jpeg"),("jpg files", "*.jpg"),("png files", "*.png")))
-        if filepath:
-            if filepath[filepath.find("."):] == ".dcm":
-                self.array, img2show = read_dicom_file(filepath)
-            else:
-                self.array, img2show = read_jpg_file(filepath)
-            self.img1 = img2show.resize((250, 250), Image.Resampling.LANCZOS)
-            self.img1 = ImageTk.PhotoImage(self.img1)
-            self.text_img1.image_create(END, image=self.img1)
-            self.button1["state"] = "enabled"
+        img_reader = ImageReader(filepath)
+        self.array, img2show = img_reader.process_image()
+        self.img1 = img2show.resize((250, 250), Image.Resampling.LANCZOS)
+        self.img1 = ImageTk.PhotoImage(self.img1)
+        self.text_img1.image_create(END, image=self.img1)
+        self.button1["state"] = "enabled"
 
     def run_model(self):
         self.label, self.proba, self.heatmap = predict(self.array)
