@@ -4,6 +4,8 @@
 from tkinter import *
 from tkinter import ttk, font, filedialog, Entry
 from tkinter.messagebox import askokcancel, showinfo, WARNING
+import distutils as _distutils
+import tkinter.tix as tix
 import getpass
 from PIL import ImageTk, Image
 from tensorflow.keras import backend as K
