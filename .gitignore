@@ -32,6 +32,8 @@ imagenes/
 neumonia/
 models/
 env_neumonia/
+tests/__pycache__/
+tests/.pytest_cache/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
