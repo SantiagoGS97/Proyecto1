@@ -8,11 +8,12 @@ import pydicom
 import warnings
 import pytest
 
-    
+######################### Prueba 0 ##################################################################
 class TestCase(unittest.TestCase):
     def test_random(self): 
         a = 1
         self.assertEqual(a, 1)
+        
 ######################### Prueba 1 ##################################################################
 class TestReadJpgFile(unittest.TestCase):
     @patch('cv2.imread')
@@ -52,5 +53,18 @@ class TestReadDicomFile(unittest.TestCase):
         self.assertEqual(img_RGB.dtype, np.uint8)
         self.assertEqual(img_RGB.shape[2], 3)
 
-
 ######################### Prueba 3 ##################################################################   
+class TestPreprocessFunction(unittest.TestCase):
+    @patch('cv2.resize')
+    @patch('cv2.cvtColor')
+    @patch('cv2.createCLAHE')
+    def test_preprocess(self, mock_createCLAHE, mock_cvtColor, mock_resize):
+        mock_resize.return_value = np.random.randint(0, 256, (512, 512, 3), dtype=np.uint8)
+        mock_cvtColor.return_value = np.random.randint(0, 256, (512, 512), dtype=np.uint8)
+        mock_clahe = mock_createCLAHE.return_value
+        mock_clahe.apply.return_value = np.random.randint(0, 256, (512, 512), dtype=np.uint8)
+        input_array = np.random.randint(0, 256, (1000, 1000, 3), dtype=np.uint8)
+        result = preprocess(input_array)
+        self.assertIsInstance(result, np.ndarray)
+        self.assertEqual(result.shape, (1, 512, 512, 1))
+        self.assertEqual(result.dtype, np.float64)
