@@ -14,5 +14,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./app.py .
+COPY ./neumonia_detec.py .
 
-CMD ["python", "app.py","gedit"]
+CMD ["python", "app.py","gedit","neumonia_detec.py"]
