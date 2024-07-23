@@ -1,23 +1,16 @@
+FROM python:3.10.0
 
-FROM ubuntu:latest
-
-RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update && apt-get install -y \
-    python3.10 \
-    python3.10-venv \
-    python3.10-dev \
-    python3-pip \
+RUN apt-get update -y && \
+    apt-get install python3-opencv gedit -y\
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+WORKDIR /home/src
 
-RUN python3 --version
-RUN pip3 --version
+COPY requirements.txt .
 
-WORKDIR /app
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python3","detector_neumonia.py"]
+COPY ./app.py .
 
+CMD ["python", "app.py","gedit"]
