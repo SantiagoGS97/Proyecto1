@@ -5,12 +5,15 @@ RUN apt-get update -y && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN git clone https://github.com/SantiagoGS97/Proyecto1.git
-
 WORKDIR /home/src
 
 COPY requirements.txt .
 COPY imagenes/ .
+
+# En la carpeta donde se vaya a crear el Docker file, debe estar
+# la carpeta de models con el archivo .h5 para que al 
+# ejecutarse en Docker funciones
+COPY models /home/src/models
 
 RUN pip install --no-cache-dir -r requirements.txt
 
