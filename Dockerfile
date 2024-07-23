@@ -10,6 +10,8 @@ RUN git clone https://github.com/SantiagoGS97/Proyecto1.git
 WORKDIR /home/src
 
 COPY requirements.txt .
+COPY imagenes/ .
+COPY models/ .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
