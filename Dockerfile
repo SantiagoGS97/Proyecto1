@@ -5,6 +5,8 @@ RUN apt-get update -y && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN git clone https://github.com/SantiagoGS97/Proyecto1.git
+
 WORKDIR /home/src
 
 COPY requirements.txt .
