@@ -23,6 +23,11 @@ tf.compat.v1.disable_eager_execution()
 tf.compat.v1.experimental.output_all_intermediates(True)
 import cv2
 
+from predict import predict
+from modelo import model_fun
+from read_img import ImageReader
+
+
 class App():
     def __init__(self):
         self.root = Tk()
