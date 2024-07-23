@@ -11,7 +11,6 @@ WORKDIR /home/src
 
 COPY requirements.txt .
 COPY imagenes/ .
-COPY models/ .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
